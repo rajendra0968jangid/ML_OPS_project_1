@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Movie Recommender</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+    h1 { margin-bottom: 8px; }
+    .container { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+    .list { border: 1px solid #ddd; border-radius: 8px; padding: 12px; height: 70vh; overflow: auto; }
+    .details { border: 1px solid #ddd; border-radius: 8px; padding: 16px; height: 70vh; overflow: auto; }
+    input[type="search"] { width: 100%; padding: 8px; margin-bottom: 8px; }
+    ul { list-style: none; padding-left: 0; margin: 0; }
+    li.movie-item { padding: 6px; border-radius: 6px; cursor: pointer; }
+    li.movie-item:hover { background: #f0f0f0; }
+    .selected { background: #e6f0ff; }
+    .rec-list { margin-top: 12px; }
+    .rec-item { padding: 8px; border-radius: 6px; cursor: pointer; display: inline-block; margin: 6px; background: #f9f9f9; border: 1px solid #eee; }
+    .rec-item:hover { background: #eef; }
+    .no-data { color: #999; }
+  </style>
+</head>
+<body>
+  <h1>Movie Recommender</h1>
+  <p>Select a movie to see the top 5 recommendations. Click a recommended movie to follow its recommendations.</p>
+
+  <div class="container">
+    <div>
+      <div class="list">
+        <input id="search" type="search" placeholder="Search movies..." />
+        <ul id="movieList"></ul>
+      </div>
+    </div>
+    <div class="details" id="detailsArea">
+      <p>No movie selected yet.</p>
+    </div>
+  </div>
+
+  <script>
+    const JSON_PATH = "movies_recs.json";
+    let data = {};
+
+    const movieListEl = document.getElementById('movieList');
+    const searchEl = document.getElementById('search');
+    const detailsEl = document.getElementById('detailsArea');
+
+    function renderMovieList(filter='') {
+      const titles = Object.keys(data).filter(t => t.toLowerCase().includes(filter.toLowerCase())).sort();
+      movieListEl.innerHTML = '';
+      if (titles.length === 0) {
+        movieListEl.innerHTML = '<li class="no-data">No movies found</li>';
+        return;
+      }
+      for (const t of titles) {
+        const li = document.createElement('li');
+        li.className = 'movie-item';
+        li.textContent = t;
+        li.onclick = () => selectMovie(t, li);
+        movieListEl.appendChild(li);
+      }
+    }
+
+    let currentSelectedElem = null;
+    function selectMovie(title, clickedElem=null) {
+      if (currentSelectedElem) currentSelectedElem.classList.remove('selected');
+      if (clickedElem) {
+        clickedElem.classList.add('selected');
+        currentSelectedElem = clickedElem;
+      }
+
+      const recs = data[title] || [];
+      detailsEl.innerHTML = `
+        <h2>${title}</h2>
+        <p>Top ${recs.length} recommendations:</p>
+        <div class="rec-list">
+          ${recs.length ? recs.map(r => `<span class="rec-item" data-title="${r}">${r}</span>`).join('') : '<div class="no-data">No recommendations found.</div>'}
+        </div>
+      `;
+      document.querySelectorAll('.rec-item').forEach(node => {
+        node.addEventListener('click', e => {
+          const t = e.currentTarget.getAttribute('data-title');
+          const listNode = Array.from(movieListEl.children).find(li => li.textContent === t);
+          selectMovie(t, listNode || null);
+        });
+      });
+    }
+
+    searchEl.addEventListener('input', e => renderMovieList(e.target.value));
+
+    fetch(JSON_PATH)
+      .then(r => r.json())
+      .then(obj => {
+        data = obj;
+        renderMovieList();
+      })
+      .catch(err => {
+        detailsEl.innerHTML = `<p class="no-data">Error loading JSON: ${err.message}</p>`;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
