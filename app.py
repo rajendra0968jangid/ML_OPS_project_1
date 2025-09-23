@@ -1,5 +1,9 @@
 import pandas as pd
 import numpy as np
+import ast
+import json
+import nltk
+from nltk.stem.porter import PorterStemmer
 
 movies = pd.read_csv("tmdb_5000_movies.csv")
 credits = pd.read_csv("tmdb_5000_credits.csv")
@@ -17,7 +21,6 @@ movies.dropna(inplace=True)
 #check duplication 
 movies.duplicated().sum()
 
-import ast
 
 def convert(obj):
     L = []
@@ -89,8 +92,6 @@ new_df['tags'] = new_df['tags'].apply(lambda x:x.lower())
 # print(new_df.head())
 
 #remove similar words
-import nltk
-from nltk.stem.porter import PorterStemmer
 ps = PorterStemmer()
 
 def stem(text):
@@ -136,7 +137,6 @@ recommend('Batman Begins')
 
 
 ################################
-import json
 
 # build dictionary: title -> list of top-5 recommended titles
 recs = {}
